@@ -35,8 +35,22 @@ const App = () =>{
             }
           }}
       >
+      <Tab.Screen 
+        name="Home"
+        component={Home}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View>
+              <Image 
+                source={require('.asset/image.png')}
+                style={{ width: 24, height: 24, tintColor: focused ? 'blue' : 'gray' }}
+              />
+              <Text style={{ color: focused ? 'blue' : 'gray' }}>Home</Text>
+            </View>
+          )
+        }}
+      />
 
-        <Tab.Screen name="Home" component={Home}></Tab.Screen>
         <Tab.Screen name="Status" component={Status}></Tab.Screen>
 
 
