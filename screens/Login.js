@@ -2,6 +2,9 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 import React, { useState } from 'react'
 import { useNavigation } from '@react-navigation/native';
 
+
+
+
 const Login = () => {
     const [name, setName]= useState('');
     const [email, setEmail]= useState('');
@@ -9,7 +12,6 @@ const Login = () => {
     const [password, setPassword]= useState('');
     const [confirmPassword, setconfirmPassword]= useState('');
    
-    const navigation = useNavigation()
 
   return (
     <View style={styles.container}>
