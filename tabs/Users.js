@@ -19,12 +19,12 @@ const Users = () => {
   return (
     <View style={styles.container}>
         <View style={styles.header}>
-            <Text style={styles.container}>Chat App</Text>
+            <Text style={styles.container}>Chat App </Text>
         </View>
         <FlatList data={users} renderItem={({item,index})=>{
             return(
                 <TouchableOpacity style={styles.userItem} onPress={()=>{
-                    navigation.navigate('chat',{data:item})
+                    navigation.navigate('Chat',{data:item})
                 }}>
                     <Image source={require('../images/user.png')} style={styles.userIcon} />
                     <Text style={styles.userIcon} >{item.name}</Text>
