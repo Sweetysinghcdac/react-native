@@ -1,18 +1,41 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useState } from 'react'
 import { useNavigation } from '@react-navigation/native';
-
+import Loader from '../components/Loader';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
 const Login = () => {
-    const [name, setName]= useState('');
     const [email, setEmail]= useState('');
-    const [mobile, setMobile]= useState('');
     const [password, setPassword]= useState('');
-    const [confirmPassword, setconfirmPassword]= useState('');
-   
 
+    const [visible, setVisible]=useState(false);
+    const navigation = useNavigation();
+
+    const loginUser=()=>{
+        setVisible(true);
+        if('email'==''){
+           
+            Alert.alert('enter  email')
+            setVisible(false);
+
+        }
+        else{
+            setVisible(false);
+            goToNext("name","email","password")
+        }
+    }
+
+
+    const goToNext=async(name, email, userId)=>{
+        await AsyncStorage.setItem('NAME',name);
+        await AsyncStorage.setItem('EMAIL',email);
+        await AsyncStorage.setItem('PASSWORD',password);
+        navigation.navigate('Main');
+
+
+    }
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
@@ -28,13 +51,19 @@ const Login = () => {
        onChangeText={text=>setPassword}
         />
     
-        <TouchableOpacity style={styles.btn}>
+        <TouchableOpacity style={styles.btn} onPress={()=>{
+            loginUser();
+            // navigation.navigate('h');
+        }}>
             <Text style={styles.btnText}>Login</Text>
         </TouchableOpacity>
 
         <Text style={styles.orLogin} onPress={ () =>{
-                navigation.goBack();
+                navigation.navigate('SignUp')
             }}>Or Sign Up</Text>
+
+        
+        <Loader visible={visible} />
 
     </View>
   )
