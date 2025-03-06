@@ -2,10 +2,10 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { db } from '../firebaseConfig';
-import { getFirestore, collection, addDoc } from "firebase/firestore";
-import { app } from "../firebaseConfig"; // Ensure the correct path
+// import { getFirestore, collection, addDoc } from "firebase/firestore";
+// import { app } from "../firebaseConfig"; // Ensure the correct path
 
-import { v4 as uuidv4 } from 'uuid';  // Use 'uuid' package
+// import { v4 as uuidv4 } from 'uuid';  // Use 'uuid' package
 
 const SignUp = () => {
     const [name, setName]= useState('');
