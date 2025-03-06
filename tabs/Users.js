@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
         fontWeight:'600',
     },
     userItem:{
-        width:Dimensions.get(window).width -50,
+        // width:Dimensions.get(window).width -50,
         alignItems:'center',
         marginTop:20,
         flexDirection:'row',

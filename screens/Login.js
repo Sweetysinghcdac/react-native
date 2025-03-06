@@ -32,7 +32,7 @@ const Login = () => {
         await AsyncStorage.setItem('NAME',name);
         await AsyncStorage.setItem('EMAIL',email);
         await AsyncStorage.setItem('PASSWORD',password);
-        navigation.navigate('Main');
+        navigation.navigate('MainScreen');
 
 
     }

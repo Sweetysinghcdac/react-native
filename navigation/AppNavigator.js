@@ -32,7 +32,7 @@ const AppNavigator = () => {
         options={{headerShown:false}}
       />
        <Stack.Screen
-        name ={'Main'}
+        name ={'MainScreen'}
         component={MainScreen}
         options={{headerShown:false}}
       />

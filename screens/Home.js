@@ -5,33 +5,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // https://youtu.be/CeW1M_7AFOU?si=UxFUqLQhudIHe03R
 const Home = () => {
   const navigation=useNavigation();
-  // useEffect( () => {
-  //   setTimeout( ()=>{
-  //     // navigation.navigate('Login');
-  //     chechLogin();
+  useEffect( () => {
+    setTimeout( ()=>{
+      // navigation.navigate('Login');
+      chechLogin();
 
-  //   },2000);
-  //   const chechLogin=async()=>{
-  //     const id= await AsyncStorage.getItem("USERID");
-  //     if(id!==null){
-  //       navigation.navigate('Main');
-  //     }
-  //     else{
-  //       navigation.navigate('Login');
-  //     }
-  //   }
-  // })
+    },2000);
+    const chechLogin=async()=>{
+      const id= await AsyncStorage.getItem("USERID");
+      if(id!==null){
+        navigation.navigate('MainScreen');
+      }
+      else{
+        navigation.navigate('Login');
+      }
+    }
+  })
   // useState( () => {
   //   navigation.navigate('SignUp')
   // }, [])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-        navigation.navigate('SignUp');
-    }, 2000);
-    return () => clearTimeout(timer); // Cleanup function
-}, []); // Empty dependency array runs only once
-
   return (
     <View style={styles.container}>
       <Text style={styles.logo}>Chat App</Text>
