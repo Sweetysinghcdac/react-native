@@ -28,31 +28,57 @@ const SignUp = () => {
     };
 
     const registerUser = async () => {
-        if (!validate()) return;
-
-        setLoading(true);
+        if (!name || !email || !mobile || !password || !confirmPassword) {
+            Alert.alert("Error", "All fields are required.");
+            return;
+        }
+    
+        if (password !== confirmPassword) {
+            Alert.alert("Error", "Passwords do not match.");
+            return;
+        }
+    
         try {
             const response = await axios.post(API_URL, {
-                name: name,
-                email: email,
-                mobile: mobile,
-                password: password
+                name,
+                email,
+                mobile,
+                password
+            }, {
+                headers: { 'Content-Type': 'application/json' }
             });
-
-            if (response.status === 201 || response.status === 200) {
-                Alert.alert("Success", "User registered successfully!");
-                navigation.navigate('Login'); // Redirect to Login screen
+    
+            if (response.status === 201) {
+                const { user, token } = response.data;
+    
+                // ✅ Store user info & token
+                await AsyncStorage.setItem('USER_NAME', user.name);
+                await AsyncStorage.setItem('USER_EMAIL', user.email);
+                await AsyncStorage.setItem('USER_ID', String(user.id));
+                await AsyncStorage.setItem('AUTH_TOKEN', token);
+    
+                Alert.alert("Success", "Account created successfully!");
+                navigation.replace('MainScreen');
             } else {
-                Alert.alert("Error", "Signup failed. Please try again.");
+                Alert.alert("Signup Failed", "Please try again.");
             }
         } catch (error) {
-            console.error("Signup Error:", error);
-            Alert.alert("Signup Failed", error.response?.data?.message || "An error occurred");
-        } finally {
-            setLoading(false);
+            // ✅ Prevent error from logging in Metro
+            if (error.response && error.response.status === 422) {
+                const errorData = error.response.data.error; // Laravel returns validation errors in `error`
+    
+                let errorMessage = "Invalid input data.";
+    
+                if (typeof errorData === "object") {
+                    errorMessage = Object.values(errorData).join("\n"); // Show all validation errors
+                }
+    
+                Alert.alert("Signup Error", errorMessage);
+            } else {
+                Alert.alert("Signup Error", "Something went wrong. Please try again.");
+            }
         }
     };
-
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Sign Up</Text>

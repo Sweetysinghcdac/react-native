@@ -18,35 +18,36 @@ const Login = () => {
             Alert.alert('Error', 'Please enter both email and password');
             return;
         }
-
+    
         setVisible(true);
-        
+    
         try {
-            const response = await axios.post(API_URL, { email, password }, {
+            const response = await axios.post("http://192.168.2.7:8000/api/login", { email, password }, {
                 headers: { 'Content-Type': 'application/json' }
             });
-
+    
             if (response.status === 200) {
                 const { user, token } = response.data;
-
-                // Save user details & token in AsyncStorage
+    
+                // ✅ Save user details & token
                 await AsyncStorage.setItem('USER_NAME', user.name);
                 await AsyncStorage.setItem('USER_EMAIL', user.email);
                 await AsyncStorage.setItem('USER_ID', String(user.id));
-                await AsyncStorage.setItem('AUTH_TOKEN', token);
-
+                await AsyncStorage.setItem('AUTH_TOKEN', token); // Store the token
+    
                 Alert.alert("Success", "Login Successful!");
-                navigation.navigate('MainScreen'); // Navigate to main screen
+                navigation.replace('MainScreen');
             } else {
                 Alert.alert("Login Failed", response.data.message || "Invalid credentials");
             }
         } catch (error) {
-            console.error("Login Error:", error);
+            // console.error("Login Error:", error);
             Alert.alert("Login Failed", "Invalid email or password.");
         } finally {
             setVisible(false);
         }
     };
+    
 
     return (
         <View style={styles.container}>

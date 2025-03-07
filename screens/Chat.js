@@ -9,12 +9,15 @@ import {
   StyleSheet, 
   Platform, 
   Keyboard, 
-  TouchableWithoutFeedback 
+  TouchableWithoutFeedback, 
+  Alert 
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import echo from '../echo';
 
-const API_URL = "http://192.168.2.7:8000/api/send-message"; // Use your Laravel API IP
+const API_MESSAGES = "http://192.168.2.7:8000/api/messages"; // Fetch Messages API
+const API_SEND_MESSAGE = "http://192.168.2.7:8000/api/send-message"; // Send Message API
 
 const Chat = ({ route }) => {
   const [messages, setMessages] = useState([]);
@@ -22,16 +25,11 @@ const Chat = ({ route }) => {
   const userId = route.params?.userId || '123'; // Replace with actual user ID
 
   useEffect(() => {
-    // Fetch previous messages
-    axios.get(`${API_URL}/messages`, {
-      headers: { Authorization: `Bearer YOUR_AUTH_TOKEN` }
-    }).then(response => {
-      setMessages(response.data);
-    });
+    fetchMessages(); // Fetch messages when the component loads
 
-    // Listen for new messages
+    // Listen for new messages via Laravel Reverb WebSockets
     echo.channel('chat-channel').listen('.message-sent', (data) => {
-      setMessages(prevMessages => [data.message, ...prevMessages]);
+      setMessages(prevMessages => [...prevMessages, data.message]);
     });
 
     return () => {
@@ -39,40 +37,77 @@ const Chat = ({ route }) => {
     };
   }, []);
 
-  const sendMessage = async () => {
-      if (!inputText.trim()) return;
+  // ✅ Fetch Previous Messages from Laravel API
+  const fetchMessages = async () => {
+    try {
+      const token = await AsyncStorage.getItem("AUTH_TOKEN");
 
-      try {
-          // Retrieve the token from AsyncStorage
-          const token = await AsyncStorage.getItem("AUTH_TOKEN");
-
-          if (!token) {
-              console.error("No authentication token found.");
-              Alert.alert("Authentication Error", "Please log in again.");
-              return;
-          }
-
-          // Send message with Bearer token
-          const response = await axios.post(API_URL, { message: inputText }, {
-              headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-              }
-          });
-
-          if (response.status === 200) {
-              console.log("Message sent:", response.data);
-              setMessages([...messages, response.data.message]); // Append new message
-              setInputText('');
-          } else {
-              console.error("Failed to send message:", response.data);
-              Alert.alert("Error", "Message not sent.");
-          }
-      } catch (error) {
-          console.error("Message sending failed:", error);
-          Alert.alert("Error", "Failed to send message. Please try again.");
+      if (!token) {
+        console.error("No authentication token found.");
+        Alert.alert("Authentication Error", "Please log in again.");
+        return;
       }
+
+      const response = await axios.get(API_MESSAGES, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.status === 200) {
+        setMessages(response.data.messages);
+      } else {
+        console.error("Failed to fetch messages:", response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      if (error.response && error.response.status === 401) {
+        Alert.alert("Session Expired", "Please log in again.");
+        await AsyncStorage.clear();
+        navigation.replace("Login");
+      }
+    }
   };
+
+  // ✅ Send a New Message
+  const sendMessage = async () => {
+    if (!inputText.trim()) return;
+
+    try {
+        const token = await AsyncStorage.getItem("AUTH_TOKEN");
+
+        if (!token) {
+            Alert.alert("Authentication Error", "Please log in again.");
+            return;
+        }
+
+        const response = await axios.post("http://192.168.2.7:8000/api/send-message", {
+            message: inputText
+        }, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json' // ✅ Ensure Laravel treats this as an API request
+            }
+        });
+
+        if (response.status === 200) {
+            setMessages(prevMessages => [...prevMessages, response.data.message]); // Append new message
+            setInputText('');
+        } else {
+            Alert.alert("Error", "Message not sent.");
+        }
+    } catch (error) {
+        console.error("Message sending failed:", error);
+
+        let errorMessage = "Failed to send message. Please try again.";
+        if (error.response) {
+            errorMessage = error.response.data.message || errorMessage;
+        }
+
+        Alert.alert("Error", errorMessage);
+    }
+};
+
+
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
@@ -83,7 +118,7 @@ const Chat = ({ route }) => {
         <View style={styles.container}>
           <FlatList
             data={messages}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => String(item.id)}
             inverted
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
@@ -100,10 +135,7 @@ const Chat = ({ route }) => {
               value={inputText} 
               onChangeText={setInputText} 
             />
-            <TouchableOpacity style={styles.sendButton} onPress={() => {
-              console.log("Send button clicked");
-              sendMessage();
-            }}>
+            <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
               <Text style={styles.sendText}>Send</Text>
             </TouchableOpacity>
           </View>

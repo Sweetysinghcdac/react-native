@@ -1,10 +1,10 @@
-import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
+import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View, Image, ActivityIndicator, Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 
-const API_URL = "http://192.168.2.7:8000/api/users"; // Replace with your actual Laravel API endpoint
+const API_URL = "http://192.168.2.7:8000/api/users"; // Laravel API endpoint
 
 const Users = () => {
     const [users, setUsers] = useState([]);
@@ -12,14 +12,18 @@ const Users = () => {
     const navigation = useNavigation();
 
     useEffect(() => {
-        getUsers();
+        getUsers(); // Call the function when component loads
     }, []);
 
+    // ✅ Function to fetch users from Laravel API
     const getUsers = async () => {
         try {
-            const token = await AsyncStorage.getItem("AUTH_TOKEN"); // Retrieve stored auth token
+            const token = await AsyncStorage.getItem("AUTH_TOKEN");
+
             if (!token) {
                 console.error("No auth token found.");
+                Alert.alert("Session Expired", "Please log in again.");
+                navigation.replace("Login"); // Redirect to Login
                 return;
             }
 
@@ -28,12 +32,18 @@ const Users = () => {
             });
 
             if (response.status === 200) {
-                setUsers(response.data.users); // Adjust based on your API response structure
+                setUsers(response.data.users);
             } else {
                 console.error("Failed to fetch users:", response.data);
             }
         } catch (error) {
             console.error("Error fetching users:", error);
+
+            if (error.response && error.response.status === 401) {
+                Alert.alert("Session Expired", "Your login session has expired. Please log in again.");
+                await AsyncStorage.clear(); // Clear old token
+                navigation.replace("Login"); // Redirect to Login screen
+            }
         } finally {
             setLoading(false);
         }
@@ -72,10 +82,7 @@ const Users = () => {
 export default Users;
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: 'white',
-        flex: 1,
-    },
+    container: { backgroundColor: 'white', flex: 1 },
     header: {
         width: '100%',
         height: 60,
@@ -84,11 +91,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    title: {
-        color: 'purple',
-        fontSize: 20,
-        fontWeight: '600',
-    },
+    title: { color: 'purple', fontSize: 20, fontWeight: '600' },
     userItem: {
         width: Dimensions.get('window').width - 50,
         flexDirection: 'row',
@@ -104,9 +107,5 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
     },
-    name: {
-        color: 'black',
-        marginLeft: 20,
-        fontSize: 20,
-    }
+    name: { color: 'black', marginLeft: 20, fontSize: 20 },
 });
