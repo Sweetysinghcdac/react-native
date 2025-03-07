@@ -1,71 +1,84 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   View, 
-  Text, 
   TextInput, 
   FlatList, 
+  Text, 
   TouchableOpacity, 
   KeyboardAvoidingView, 
-  TouchableWithoutFeedback, 
-  Keyboard, 
   StyleSheet, 
-  Platform 
+  Platform, 
+  Keyboard, 
+  TouchableWithoutFeedback, 
+  ScrollView 
 } from 'react-native';
+import axios from 'axios';
+import echo from '../echo';
 
-const Chat = () => {
-  const [messages, setMessages] = useState([
-    { id: '1', text: 'Hello! How can I help you?', sender: 'bot' },
-  ]);
+const API_URL = "http://192.168.2.7:8000/api"; // Use your correct Laravel API IP
+
+const Chat = ({ route }) => {
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const userId = route.params?.userId || '123'; // Replace with actual user ID
 
-  // Function to send a message
-  const sendMessage = () => {
+  useEffect(() => {
+    // Fetch previous messages
+    axios.get(`${API_URL}/messages`, {
+      headers: { Authorization: `Bearer YOUR_AUTH_TOKEN` }
+    }).then(response => {
+      setMessages(response.data);
+    });
+
+    // Listen for new messages
+    echo.channel('chat-channel').listen('.message-sent', (data) => {
+      setMessages(prevMessages => [data.message, ...prevMessages]);
+    });
+
+    return () => {
+      echo.leaveChannel('chat-channel');
+    };
+  }, []);
+
+  const sendMessage = async () => {
     if (inputText.trim().length === 0) return;
 
-    const newMessage = { id: Date.now().toString(), text: inputText, sender: 'user' };
-    setMessages(prevMessages => [...prevMessages, newMessage]);
-    setInputText('');
+    await axios.post(`${API_URL}/send-message`, {
+      message: inputText,
+    }, {
+      headers: { Authorization: `Bearer YOUR_AUTH_TOKEN` }
+    });
 
-    // Simulate bot reply after 1 sec
-    setTimeout(() => {
-      setMessages(prevMessages => [
-        ...prevMessages, 
-        { id: Date.now().toString(), text: 'I am just a bot! 😊', sender: 'bot' }
-      ]);
-    }, 1000);
+    setInputText('');
   };
 
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 70} // Adjust for iOS keyboard height
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 80} // Adjust for keyboard height
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={styles.inner}>
-          {/* Chat messages list */}
+        <View style={styles.container}>
           <FlatList
             data={messages}
             keyExtractor={(item) => item.id}
-            keyboardShouldPersistTaps="handled" // Ensures input works while scrolling
+            inverted
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }} // Ensure messages do not overlap input
             renderItem={({ item }) => (
-              <View style={[styles.message, item.sender === 'user' ? styles.userMessage : styles.botMessage]}>
-                <Text style={styles.messageText}>{item.text}</Text>
+              <View style={[styles.message, item.user_id === userId ? styles.userMessage : styles.botMessage]}>
+                <Text style={styles.messageText}>{item.message}</Text>
               </View>
             )}
-            contentContainerStyle={{ paddingBottom: 80 }}
           />
-
-          {/* Input box for typing messages */}
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Type a message..."
-              value={inputText}
-              onChangeText={(text) => setInputText(text)}
-              returnKeyType="send"
-              onSubmitEditing={sendMessage}
-              blurOnSubmit={false}
+            <TextInput 
+              style={styles.input} 
+              placeholder="Type a message..." 
+              value={inputText} 
+              onChangeText={setInputText} 
+              onFocus={() => console.log("Input Focused")}
             />
             <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
               <Text style={styles.sendText}>Send</Text>
@@ -80,58 +93,38 @@ const Chat = () => {
 export default Chat;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  message: { padding: 10, marginVertical: 5, marginHorizontal: 10, borderRadius: 8, maxWidth: '70%' },
+  userMessage: { backgroundColor: '#007AFF', alignSelf: 'flex-end' },
+  botMessage: { backgroundColor: '#E5E5EA', alignSelf: 'flex-start' },
+  messageText: { color: 'white' },
+  inputContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 10, 
+    borderTopWidth: 1, 
+    borderColor: '#ddd', 
+    backgroundColor: 'white', 
+    position: 'absolute', 
+    bottom: 0, 
+    width: '100%' 
   },
-  inner: {
-    flex: 1,
-    justifyContent: 'space-between',
+  input: { 
+    flex: 1, 
+    padding: 10, 
+    borderWidth: 1, 
+    borderColor: '#ddd', 
+    borderRadius: 8, 
+    marginRight: 10 
   },
-  message: {
-    padding: 10,
-    marginVertical: 5,
-    marginHorizontal: 10,
-    borderRadius: 8,
-    maxWidth: '70%',
+  sendButton: { 
+    backgroundColor: '#007AFF', 
+    paddingVertical: 10, 
+    paddingHorizontal: 15, 
+    borderRadius: 8 
   },
-  userMessage: {
-    backgroundColor: '#007AFF',
-    alignSelf: 'flex-end',
-  },
-  botMessage: {
-    backgroundColor: '#E5E5EA',
-    alignSelf: 'flex-start',
-  },
-  messageText: {
-    color: 'white',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderTopWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: 'white',
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-  },
-  input: {
-    flex: 1,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  sendButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-  },
-  sendText: {
-    color: 'white',
-    fontWeight: 'bold',
+  sendText: { 
+    color: 'white', 
+    fontWeight: 'bold' 
   },
 });
