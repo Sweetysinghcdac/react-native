@@ -14,7 +14,7 @@ import {
 import axios from 'axios';
 import echo from '../echo';
 
-const API_URL = "http://192.168.2.7:8000/api"; // Use your Laravel API IP
+const API_URL = "http://192.168.2.7:8000/api/send-message"; // Use your Laravel API IP
 
 const Chat = ({ route }) => {
   const [messages, setMessages] = useState([]);
@@ -40,33 +40,39 @@ const Chat = ({ route }) => {
   }, []);
 
   const sendMessage = async () => {
-    if (inputText.trim().length === 0) return;
+      if (!inputText.trim()) return;
 
-    try {
-      const response = await axios.post(
-        `${API_URL}/send-message`,
-        { message: inputText },
-        {
-          headers: { Authorization: `Bearer YOUR_AUTH_TOKEN` },
-        }
-      );
+      try {
+          // Retrieve the token from AsyncStorage
+          const token = await AsyncStorage.getItem("AUTH_TOKEN");
 
-      if (response.status === 200 || response.status === 201) {
-        const newMessage = {
-          id: Date.now().toString(),
-          user_id: userId,
-          message: inputText,
-        };
+          if (!token) {
+              console.error("No authentication token found.");
+              Alert.alert("Authentication Error", "Please log in again.");
+              return;
+          }
 
-        setMessages(prevMessages => [newMessage, ...prevMessages]);
+          // Send message with Bearer token
+          const response = await axios.post(API_URL, { message: inputText }, {
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+              }
+          });
 
-        setInputText('');
+          if (response.status === 200) {
+              console.log("Message sent:", response.data);
+              setMessages([...messages, response.data.message]); // Append new message
+              setInputText('');
+          } else {
+              console.error("Failed to send message:", response.data);
+              Alert.alert("Error", "Message not sent.");
+          }
+      } catch (error) {
+          console.error("Message sending failed:", error);
+          Alert.alert("Error", "Failed to send message. Please try again.");
       }
-    } catch (error) {
-      console.error("Message sending failed:", error);
-    }
   };
-
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
