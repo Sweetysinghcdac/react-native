@@ -116,18 +116,18 @@ const Chat = ({ route }) => {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.container}>
-          <FlatList
-            data={messages}
-            keyExtractor={(item) => String(item.id)}
-            inverted
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
-            renderItem={({ item }) => (
-              <View style={[styles.message, item.user_id === userId ? styles.userMessage : styles.botMessage]}>
-                <Text style={styles.messageText}>{item.message}</Text>
-              </View>
-            )}
-          />
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => String(item.id)}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
+          renderItem={({ item }) => (
+            <View style={[styles.message, item.user_id === userId ? styles.userMessage : styles.botMessage]}>
+              <Text style={styles.messageText}>{item.message}</Text>
+            </View>
+          )}
+        />
+
           <View style={styles.inputContainer}>
             <TextInput 
               style={styles.input} 
