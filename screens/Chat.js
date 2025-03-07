@@ -9,13 +9,12 @@ import {
   StyleSheet, 
   Platform, 
   Keyboard, 
-  TouchableWithoutFeedback, 
-  ScrollView 
+  TouchableWithoutFeedback 
 } from 'react-native';
 import axios from 'axios';
 import echo from '../echo';
 
-const API_URL = "http://192.168.2.7:8000/api"; // Use your correct Laravel API IP
+const API_URL = "http://192.168.2.7:8000/api"; // Use your Laravel API IP
 
 const Chat = ({ route }) => {
   const [messages, setMessages] = useState([]);
@@ -43,20 +42,36 @@ const Chat = ({ route }) => {
   const sendMessage = async () => {
     if (inputText.trim().length === 0) return;
 
-    await axios.post(`${API_URL}/send-message`, {
-      message: inputText,
-    }, {
-      headers: { Authorization: `Bearer YOUR_AUTH_TOKEN` }
-    });
+    try {
+      const response = await axios.post(
+        `${API_URL}/send-message`,
+        { message: inputText },
+        {
+          headers: { Authorization: `Bearer YOUR_AUTH_TOKEN` },
+        }
+      );
 
-    setInputText('');
+      if (response.status === 200 || response.status === 201) {
+        const newMessage = {
+          id: Date.now().toString(),
+          user_id: userId,
+          message: inputText,
+        };
+
+        setMessages(prevMessages => [newMessage, ...prevMessages]);
+
+        setInputText('');
+      }
+    } catch (error) {
+      console.error("Message sending failed:", error);
+    }
   };
 
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
       behavior={Platform.OS === "ios" ? "padding" : "height"} 
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 80} // Adjust for keyboard height
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 80}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.container}>
@@ -65,7 +80,7 @@ const Chat = ({ route }) => {
             keyExtractor={(item) => item.id}
             inverted
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }} // Ensure messages do not overlap input
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
             renderItem={({ item }) => (
               <View style={[styles.message, item.user_id === userId ? styles.userMessage : styles.botMessage]}>
                 <Text style={styles.messageText}>{item.message}</Text>
@@ -78,9 +93,11 @@ const Chat = ({ route }) => {
               placeholder="Type a message..." 
               value={inputText} 
               onChangeText={setInputText} 
-              onFocus={() => console.log("Input Focused")}
             />
-            <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+            <TouchableOpacity style={styles.sendButton} onPress={() => {
+              console.log("Send button clicked");
+              sendMessage();
+            }}>
               <Text style={styles.sendText}>Send</Text>
             </TouchableOpacity>
           </View>

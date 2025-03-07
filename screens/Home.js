@@ -1,49 +1,50 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { useNavigation } from '@react-navigation/native'
+import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// https://youtu.be/CeW1M_7AFOU?si=UxFUqLQhudIHe03R
+
 const Home = () => {
-  const navigation=useNavigation();
-  useEffect( () => {
-    setTimeout( ()=>{
-      // navigation.navigate('Login');
-      chechLogin();
+    const navigation = useNavigation();
 
-    },2000);
-    const chechLogin=async()=>{
-      const id= await AsyncStorage.getItem("USERID");
-      if(id!==null){
-        navigation.navigate('MainScreen');
-      }
-      else{
-        navigation.navigate('Login');
-      }
-    }
-  })
-  // useState( () => {
-  //   navigation.navigate('SignUp')
-  // }, [])
-  return (
-    <View style={styles.container}>
-      <Text style={styles.logo}>Chat App</Text>
-    </View>
-  )
-}
+    useEffect(() => {
+        const checkLogin = async () => {
+            try {
+                const id = await AsyncStorage.getItem("USER_ID");
+                if (id !== null) {
+                    navigation.replace('MainScreen'); // Prevents going back to Home
+                } else {
+                    navigation.replace('Login'); // Redirect to Login
+                }
+            } catch (error) {
+                console.error("Error checking login:", error);
+                navigation.replace('Login'); // Redirect to Login if error occurs
+            }
+        };
 
-export default Home
+        setTimeout(() => {
+            checkLogin();
+        }, 2000);
+    }, [navigation]); // Dependency array ensures effect runs only once
+
+    return (
+        <View style={styles.container}>
+            <Text style={styles.logo}>Chat App</Text>
+        </View>
+    );
+};
+
+export default Home;
 
 const styles = StyleSheet.create({
-  container:{
-    flex:1,
-    backgroundColor:'purple',
-    justifyContent:'center',
-    alignItems:'center'
-  },
-  logo:{
-    fontSize:30,
-    color:'white',
-    textAlign:'center'
-  },
-
-})
+    container: {
+        flex: 1,
+        backgroundColor: 'purple',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    logo: {
+        fontSize: 30,
+        color: 'white',
+        textAlign: 'center',
+    },
+});
